@@ -1,0 +1,51 @@
+#==> Configure dnsmasq. This resolves issues with docker containers not being
+#    able to resolve .consul domains.
+####
+
+- name: Configure dnsmasq to forward .consul requests to consul port 8600 # not needed since using iptables for dns forwarding
+  become: yes
+  copy:
+    dest: "/etc/dnsmasq.d/10-consul"
+    content: |
+      server=/consul/127.0.0.1#8600
+      # Forward everything else to external DNS
+      server={{cloud_resolver}}
+      cache-size=0
+  # notify: dnsmasq_restart
+  tags:
+    - base
+
+- name: Base - Update /etc/resolv.conf via resolvconf # not needed since using iptables for dns forwarding
+  become: yes
+  replace:
+    path: /etc/resolv.conf
+    regexp: "nameserver 127.0.0.*"
+    replace: "nameserver 127.0.0.1"
+    backup: yes
+  # lineinfile:
+  #   path: /etc/resolvconf/resolv.conf.d/head
+  #   line: nameserver 127.0.0.1
+  tags:
+    - base
+
+- name: Disable and stop service # stopping resolved. conflicts with dnsmasq.
+  become: yes
+  service:
+    name: "{{ item }}"
+    state: stopped
+    enabled: no
+  loop:
+    - systemd-resolved
+  tags:
+    - base
+
+
+- name: Restart service dnsmasq, in all cases # not needed if using iptables for dns forwarding
+  become: yes
+  service: name=dnsmasq state=restarted
+  ignore_errors: yes
+  tags:
+    - base
+    - dns
+
+#==> Configure dnsmasq - END

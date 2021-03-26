@@ -1,0 +1,21 @@
+# Full configuration options can be found at https://www.nomadproject.io/docs/configuration
+# https://learn.hashicorp.com/tutorials/nomad/production-deployment-guide-vm-with-consul
+
+server {
+  enabled          = true
+  bootstrap_expect = {{nomad_bootstrap_expect}} # 3 for Production
+  encrypt = "{{ nomad_encrypt }}"
+
+  server_join {
+    # retry_join = ["server-a-1", "server-a-2", "server-a-3"] # comment if consul/cloud
+    retry_max = 15  # Default 0, infinite retries
+    retry_interval = "3s"  # Default 30s
+  }
+
+  num_schedulers = {{ nomad_num_schedulers }}
+
+  node_gc_threshold = "{{ nomad_node_gc_threshold }}" # Default 24h
+  eval_gc_threshold = "{{ nomad_eval_gc_threshold }}" # Default 1h
+  job_gc_interval = "{{ nomad_job_gc_interval }}" # Default 5m
+  job_gc_threshold = "{{ nomad_job_gc_threshold }}" # Default 4h
+}

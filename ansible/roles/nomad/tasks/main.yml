@@ -1,0 +1,225 @@
+### This is now done by Linux install package
+# - name: Include user and group settings
+#   include: user_group.yml
+#   tags:
+#     - nomad
+
+### This is now done by Linux install package
+# - name: Create Hashi directory - Data
+#   file:
+#     path: /opt/{{ item }}
+#     state: directory
+#     mode: 0777
+#     owner: "{{ item }}"
+#     group: "{{ item }}"
+#   loop:
+#     - nomad
+#   tags:
+#     - nomad
+
+### This is now done by Linux install package
+# - name: Create Hashi directory - configuration
+#   file:
+#     path: /etc/{{ item }}.d
+#     state: directory
+#     mode: 0777
+#     owner: "{{ item }}"
+#     group: "{{ item }}"
+#   loop:
+#     - nomad
+#   tags:
+#     - nomad
+
+### Nomad Client Customization - Begin
+- name: Create HashiCups directories for Demo
+  become: yes
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: 0777
+    # owner: "{{ item }}"
+    # group: "{{ item }}"
+  loop:
+    - /var/lib/postgresql/data
+    - /opt/nomad-volumes/grafana # /opt/nomad-volumes created by linux package
+    - /opt/nomad/volumes/grafana
+  tags:
+    - nomad
+
+### Nomad Client Customization - End
+
+### This is now done by Linux install package
+# - name: Unzip and install hashi nomad
+#   unarchive:
+#     remote_src: yes
+#     src: https://releases.hashicorp.com/nomad/{{nomad_ver}}+ent/nomad_{{nomad_ver}}+ent_linux_{{arch}}.zip
+#     dest: /usr/bin/
+#   tags:
+#     - nomad-install
+#     - home
+
+### This is now done by base role
+# - name: Nomad - Enable autocompletion.
+#   shell: |
+#     nomad -autocomplete-install
+#   ignore_errors: yes
+#   tags:
+#     - nomad-install
+
+### This is now done by base role
+# - name: Nomad - Enable autocompletion
+#   ignore_errors: yes
+#   lineinfile:
+#     path: /home/{{user}}/.bashrc
+#     line: complete -C /usr/bin/{{item}} {{item}}
+#   loop:
+#     - nomad
+
+- name: Create service file
+  become: yes
+    # Ubuntu: service files are placesd here /lib/systemd/system/
+    # Ubuntu: symlinked to here when enabled /etc/systemd/system/multi-user.target.wants/
+  template:
+    src: init.service.j2
+    dest: /lib/systemd/system/nomad.service
+    # dest: /etc/systemd/system/nomad.service
+    # owner: root
+    # group: root
+  notify: systemd_reload
+  tags:
+    - nomad
+    - home
+
+- name: Create config files - Server
+  throttle: 1
+  template:
+    src: "{{ item }}.hcl.j2"
+    dest: "{{ nomad_config_path }}/{{ item }}.hcl"
+    owner: "{{ nomad_user }}"
+    group: "{{ nomad_group }}"
+  loop:
+    - nomad
+    - server
+  notify: nomad_restart
+  tags:
+    - nomad
+  when: "'server' in inventory_hostname"
+
+- name: Create config files - Client
+  # throttle: 1
+  template:
+    src: "{{ item }}.hcl.j2"
+    dest: "{{ nomad_config_path }}/{{ item }}.hcl"
+    owner: "{{ nomad_user }}"
+    group: "{{ nomad_group }}"
+  loop:
+    - nomad
+    - client
+  notify: nomad_restart
+  tags:
+    - nomad
+  when: "'client' in inventory_hostname"
+
+
+- name: Replace CHANGENIC with user specified NIC
+  replace:
+    path: /etc/nomad.d/nomad.hcl
+    regexp: 'CHANGENIC'
+    replace: "{{ os_interface }}"
+  tags:
+    - nomad
+
+- name: Enable and start nomad service
+  become: yes
+  throttle: 1
+  service:
+    name: nomad
+    state: restarted
+    enabled: yes
+  tags:
+    - nomad
+
+### Install License
+
+- name: Check for license file
+  stat:
+    path: "{{ role_path }}/files/nomad.hclic"
+  become: false
+  run_once: true
+  register: nomad_license_file
+  tags:
+    - installation
+    - nomad_license
+  delegate_to: 127.0.0.1
+
+- name: Install license.
+  include_tasks: install_license.yml
+  when:
+    - nomad_license_file.stat.exists | bool
+  tags:
+    - nomad_license
+
+### Install License - End
+
+- name: HashiCups - Pull images
+  become: yes
+  shell: |
+    docker pull hashicorpdemoapp/product-api-db:v0.0.12
+    docker pull hashicorpdemoapp/product-api:v0.0.12
+    docker pull hashicorpdemoapp/public-api:v0.0.2
+    docker pull hashicorpdemoapp/frontend:v0.0.4
+    docker pull hashicorp/tfc-agent:latest
+  # when: "'client' in inventory_hostname"
+  tags:
+    - nomad
+    - hashicups
+
+- name: HashiCups - Pull HashiStack images
+  become: yes
+  shell: |
+    docker pull hashicorp/vault-enterprise:latest
+    docker pull hashicorp/consul-enterprise:latest
+  # when: "'client' in inventory_hostname"
+  tags:
+    - nomad
+
+# - name: Nomad - DAS - Start prometheus and auto-scaler
+#   shell: |
+#     cd /root/nomad_jobs/hashicups
+#     nomad job run as-das-autoscaler.nomad
+#     nomad job run as-prometheus.nomad
+#   run_once: true
+#   environment:
+#     # VAULT_TOKEN: "{{ lookup('file', '/tmp/rootKey/rootkey')}}"
+#     # VAULT_ADDR: "http://127.0.0.1:8200"
+#     NOMAD_ADDR: "http://127.0.0.1:4646"
+#   tags:
+#     - nomad-license
+#     - hashicups
+
+- name: Nomad - Git checkout
+  ignore_errors: yes
+  become: yes
+  git:
+    repo: 'https://github.com/phanclan/nomad_jobs.git'
+    dest: /tmp/nomad_jobs
+    # version:
+  run_once: true
+  delegate_to: "{{prefix}}-a-1"
+  tags:
+    - nomad-license
+
+- name: Nomad - DAS - Start prometheus and auto-scaler
+  shell: |
+    cd /tmp/nomad_jobs/hashicups
+    nomad job run as-das-autoscaler.nomad
+    nomad job run as-prometheus.nomad
+  run_once: true
+  delegate_to: "{{prefix}}-a-1"
+  environment:
+    # VAULT_TOKEN: "{{ lookup('file', '/tmp/rootKey/rootkey')}}"
+    # VAULT_ADDR: "http://127.0.0.1:8200"
+    NOMAD_ADDR: "http://127.0.0.1:4646"
+  tags:
+    - nomad-license
+

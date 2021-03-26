@@ -1,0 +1,39 @@
+#==> DOCKER
+- name: Add Docker GPG apt Key
+  become: yes
+  apt_key:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    state: present
+  tags: hashi
+
+#--> Not using `command` to get dist info. using `facts` and `variables` instead.
+# - name: Get distribution info
+#   command: lsb_release -sc
+#   register: result
+#   tags: hashi
+
+- name: Add Docker Repository
+  become: yes
+  apt_repository:
+    repo: deb https://download.docker.com/linux/ubuntu {{ansible_lsb.codename}} stable
+    state: present
+  tags: hashi
+
+- name: Update apt and install docker-ce
+  become: yes
+  apt: update_cache=yes name=docker-ce state=latest
+  tags: hashi
+# - name: add user mod
+#   # no need for sudo if using become
+#   command: usermod -aG docker {{docker_user}}
+#   tags: hashi
+
+- name: Add users to docker mod
+  become: yes
+  user: name={{item}} groups=docker append=yes
+  loop:
+    - "{{user}}"
+    - ubuntu
+    - vagrant
+    - nomad
+  tags: hashi

@@ -1,0 +1,56 @@
+# Full configuration options can be found at https://www.nomadproject.io/docs/configuration
+# https://learn.hashicorp.com/tutorials/nomad/production-deployment-guide-vm-with-consul
+
+client {
+  enabled           = true
+  network_interface = "{{os_interface}}"
+  # defaults to interface with default gw. For Vagrant it should enp0s8 vs enp0s3
+{% if nomad_use_consul == False %}
+  # servers           = ["192.168.50.101", "192.168.50.102", "192.168.50.103"]
+  servers = [
+    {%- set comma = joiner(",") -%}
+    {%- for server in nomad_servers -%}
+      {{ comma() }}"{{ hostvars[server]['nomad_advertise_address'] | ipwrap }}"
+    {%- endfor -%} ]
+{% endif %}
+  #--> Will automatically use local Consul agent to discover other Nomad servers
+
+  max_kill_timeout = "{{ nomad_max_kill_timeout }}"
+
+  gc_interval = "{{ nomad_gc_interval }}"
+  gc_disk_usage_threshold = {{ nomad_gc_disk_usage_threshold }}
+  gc_inode_usage_threshold = {{ nomad_gc_inode_usage_threshold }}
+  gc_parallel_destroys = {{ nomad_gc_parallel_destroys }}
+
+  reserved {
+    cpu = {{ nomad_reserved['cpu'] }}
+    memory = {{ nomad_reserved['memory'] }}
+    disk = {{ nomad_reserved['disk'] }}
+  }
+
+  {% if nomad_chroot_env != False -%}
+  chroot_env = {
+  {% for key, value in nomad_chroot_env.items() %}
+  "{{ key }}" = "{{ value }}"
+  {% endfor -%}
+  }
+  {% endif %}
+
+  options {
+    docker.privileged.enabled = "true"
+  }
+
+  host_volume "pgdata" {
+    path      = "/var/lib/postgresql/data"
+    read_only = false
+  }
+  host_volume "grafana" {
+    path = "/opt/nomad-volumes/grafana"
+  }
+} # End client block.
+
+plugin "raw_exec" {
+  config {
+    enabled = true
+  }
+}

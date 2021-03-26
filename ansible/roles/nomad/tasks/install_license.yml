@@ -1,0 +1,19 @@
+- name: Install Nomad license
+  block:
+    # - name: Read license content
+    #   command: cat ../files/nomad.hclic
+    #   register: nomad_license
+    #   # with_fileglob: ./licenses/nomad.hclic
+    #   delegate_to: localhost
+
+    - name: License nomad
+      shell: |
+        echo {{ lookup('file', 'nomad.hclic')}} | nomad license put -
+      run_once: true
+      environment:
+        NOMAD_ADDR: "http://127.0.0.1:4646"
+
+  ignore_errors: yes
+  become: no
+  tags:
+    - nomad_license

@@ -1,0 +1,91 @@
+- name: Install base apps
+  become: yes
+  apt:
+    name: "{{ item }}"
+    state: present
+    update_cache: true
+  loop: "{{ base_apps_list }}"
+  tags:
+    - base
+
+- name: Add mappings to /etc/hosts
+  become: yes
+  blockinfile:
+    backup: yes
+    path: /etc/hosts
+    state: present
+    block: |
+      {{ item.value.ip }} {{ item.key }}
+    marker: "# {mark} ANSIBLE MANAGED BLOCK {{ item.key }}"
+  loop: "{{ lookup('dict', host_file) }}"
+  tags:
+    - home
+
+# - name: Forward DNS to Consul for .consul. Update /etc/systemd/resolved.conf
+#   become: yes
+#   blockinfile:
+#     path: /etc/systemd/resolved.conf
+#     block: |
+#       DNS=127.0.0.1
+#       Domains=~consul
+#   notify: systemd-resolved_restart
+
+# - name: use iptables to map port 53 to 8600 # Disable if using dnsmasq
+  #   become: yes
+  #   iptables:
+  #     table: nat
+  #     chain: OUTPUT
+  #     destination: localhost
+  #     protocol: "{{item}}"
+  #     match: "{{item}}"
+  #     destination_port: "53"
+  #     jump: REDIRECT
+  #     to_ports: "8600"
+  #   loop:
+  #     - tcp
+  #     - udp
+  #   tags:
+  #     - base
+
+# - name: Base - Enable and start service # not needed since using iptables for dns forwarding
+#   become: yes
+#   service:
+#     name: "{{ item }}"
+#     state: started
+#     enabled: yes
+#   loop:
+#     - resolvconf
+#   tags:
+#     - base
+
+- name: Create HashiCups directories for Demo
+  become: yes
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: 0777
+    # owner: "{{ item }}"
+    # group: "{{ item }}"
+  loop:
+    - /var/lib/postgresql/data
+    - /opt/nomad-volumes/grafana
+  tags:
+    - base
+
+#==> Install HashiStack Binaries - Specific roles configure further.
+- name: Install HashiCorp Software
+  include: install_hashi.yml
+  tags:
+    - base
+
+- name: Enable autocompletion
+  ignore_errors: yes
+  lineinfile:
+    path: /home/{{user}}/.bashrc
+    line: complete -C /usr/bin/{{item}} {{item}}
+  loop:
+    - consul
+    - nomad
+    - vault
+  tags:
+    - base

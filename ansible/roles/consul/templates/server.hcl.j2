@@ -1,0 +1,10 @@
+# Full configuration options can be found at https://www.consul.io/docs/agent/options.html
+
+#==> Server
+server           = true
+bootstrap_expect = 3
+
+#advertise_addr   = "{% raw %}{{ GetInterfaceIP \"{% endraw %}{{os_interface}}{% raw %}\" }}{% endraw %}"
+
+client_addr      = "0.0.0.0"
+ui               = true

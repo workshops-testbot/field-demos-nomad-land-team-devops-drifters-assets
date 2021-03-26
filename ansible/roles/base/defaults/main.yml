@@ -1,0 +1,58 @@
+---
+base_apps_list:
+  # - curl #default
+  - jq
+  # - software-properties-common #default
+  - tree
+  - unzip
+  # - wget #default
+  # - dnsmasq-base
+  - dnsmasq
+  # - resolvconf
+  - postgresql-client
+  # - openjdk-8-jdk # included with Roger's packer image
+  # - openjdk-8-jre # included with Roger's packer image
+boundary_ver: "0.1.1"
+boundary_user: "boundary"
+boundary_group: "boundary"
+consul_version: "0.11.1"
+consul_checksum: "sha256:eb8d2461d0ca249c1f91005f878795998bdeafccfde0b9bae82343541ce65996"
+waypoint_ver: "0.1.5"
+waypoint_user: "waypoint"
+waypoint_group: "waypoint"
+consul_config_path: "/etc/consul.d/"
+vault_ver: 1.5.5
+consul_ver: 1.8.5
+nomad_ver: 1.0.4
+terraform_ver: 0.13.5
+hashi_list:
+  - vault
+  - consul
+  - nomad
+hashi_dir:
+  - vault/data
+  - consul
+  - nomad
+arch: amd64 # arm64, amd64
+docker_user: ubuntu
+host_file:
+  server-a-1:
+    ip: "192.168.17.101"
+  server-a-2:
+    ip: "192.168.17.102"
+  server-a-3:
+    ip: "192.168.17.103"
+  server-b-1:
+    ip: 192.168.64.28
+  server-b-2:
+    ip: 192.168.64.27
+  server-b-3:
+    ip: 192.168.64.29
+  client-b-1:
+    ip: 192.168.64.30
+  hashi-a-1:
+    ip: 172.16.1.101
+  hashi-a-2:
+    ip: 172.16.1.102
+  hashi-a-3:
+    ip: 172.16.1.103

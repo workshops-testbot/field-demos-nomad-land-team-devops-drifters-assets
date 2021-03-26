@@ -1,0 +1,184 @@
+#==> Start Consul
+
+### This is now done by Linux install package
+# - name: Consul - Create consul user
+#   become: yes
+#   user:
+#     name="{{ item }}" system=yes shell="/sbin/nologin"
+#     comment="nologin user" create_home="no" state=present
+#   loop:
+#     - "{{ consul_user }}"
+#   tags:
+#     - consul
+
+### This is now done by Linux install package
+# - name: Consul - Create Hashi directory - data
+#   become: yes
+#   file:
+#     path: /opt/{{ item }}
+#     state: directory
+#     mode: 0777
+#     owner: "{{ item }}"
+#     group: "{{ item }}"
+#   loop:
+#     - consul
+#   tags:
+#     - consul
+
+### This is now done by Linux install package
+# - name: Consul - Create Hashi directory - configuration
+#   become: yes
+#   file:
+#     path: /etc/{{ item }}.d
+#     state: directory
+#     mode: 0777
+#     owner: "{{ item }}"
+#     group: "{{ item }}"
+#   loop:
+#     - consul
+#   tags:
+#     - consul
+
+# - name: Install prerequisites
+#   package:
+#     name: "{{ item }}"
+#     update_cache: yes
+#   with_items: "{{ consul_install_prerequisites }}"
+#   become: yes
+
+# - name: Download binary
+#   get_url:
+#     url: https://releases.hashicorp.com/consul/{{consul_version}}/consul_{{consul_version}}_linux_amd64.zip
+#     dest: /tmp/consul_{{consul_version}}_linux_amd64.zip
+#     owner: "{{ consul_user }}"
+#     group: "{{ consul_group }}"
+#     mode: 0755
+#     checksum: "{{consul_checksum}}"
+#   register: consul_download
+
+#==> Install Software
+### This is now done by Linux install package
+# - name: Consul - Unzip and install hashi consul
+#   become: yes
+#   unarchive:
+#     remote_src: yes
+#     src: https://releases.hashicorp.com/consul/{{consul_ver}}+ent/consul_{{consul_ver}}+ent_linux_{{arch}}.zip
+#     dest: /usr/bin/
+#   tags:
+#     - consul
+#     - home
+
+### This is now done by base role
+# - name: Enable autocompletion
+#   ignore_errors: yes
+#   lineinfile:
+#     path: /home/{{user}}/.bashrc
+#     line: complete -C /usr/bin/{{item}} {{item}}
+#   loop:
+#     - consul
+
+- name: Consul - Create service file
+  become: yes
+    # Ubuntu: service files are placesd here /lib/systemd/system/
+    # Ubuntu: symlinked to here when enabled /etc/systemd/system/multi-user.target.wants/
+  template:
+    src: init.service.j2
+    dest: /lib/systemd/system/consul.service
+    # dest: /etc/systemd/system/consul.service
+    # owner: root
+    # group: root
+  notify: systemd_reload
+  tags:
+    - consul
+    - home
+
+- name: Consul - Create config files
+  become: yes
+  template:
+    src: "{{ item }}.hcl.j2"
+    dest: "{{ consul_config_path }}/{{ item }}.hcl"
+    owner: "{{ consul_user }}"
+    group: "{{ consul_group }}"
+  loop:
+    # - client
+    - consul
+    - telemetry
+  # notify: consul_restart # does not work with loops
+  tags:
+    - consul
+
+- name: Consul - Create config files - Server
+  become: yes
+  template:
+    src: "{{ item }}.hcl.j2"
+    dest: "{{ consul_config_path }}/{{ item }}.hcl"
+    owner: "{{ consul_user }}"
+    group: "{{ consul_group }}"
+  loop:
+    - server
+  # notify: consul_restart # does not work with loops
+  when: "'server' in inventory_hostname"
+  tags:
+    - consul
+
+- name: Consul - Enable and start consul service
+  throttle: 1
+  service:
+    name: consul
+    state: restarted
+    enabled: yes
+  tags:
+    - consul
+
+#==> Configure dnsmasq. This resolves issues with docker containers not being
+#    able to resolve .consul domains.
+####
+
+- name: Configure dnsmasq.
+  # include_role:
+  #   name: consul
+  #   tasks_from: dnsmasq.yml
+  include_tasks: dnsmasq.yml
+  when: consul_dnsmasq_enable | bool
+
+#==> Configure dnsmasq - END
+
+- name: Check for license file
+  stat:
+    path: "{{ role_path }}/files/consul.hclic"
+  become: false
+  # vars:
+  #   ansible_become: false
+  run_once: true
+  register: consul_license_file
+  tags:
+    - installation
+    - consul-license
+    - home
+  delegate_to: 127.0.0.1
+
+- name: Consul License
+  block:
+    - name: Consul - Read license content
+      command: cat ./files/consul.hclic
+      register: consul_license
+      # with_fileglob: ./licenses/consul.hclic
+      delegate_to: localhost
+      run_once: true
+
+    - name: Consul - License consul
+      shell: |
+        echo {{ lookup('file', 'consul.hclic')}} | consul license put -
+      run_once: true
+      environment:
+        # CONSUL_HTTP_TOKEN: "{{ lookup('file', '/tmp/rootKey/rootkey')}}"
+        # CONSUL_HTTP_ADDR: "http://127.0.0.1:8500"
+
+  when:
+    - consul_license_file.stat.exists | bool
+  become: no
+  ignore_errors: yes
+  tags:
+    - consul-license
+    - home
+

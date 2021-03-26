@@ -1,0 +1,64 @@
+# Full configuration options can be found at https://www.nomadproject.io/docs/configuration
+# https://learn.hashicorp.com/tutorials/nomad/production-deployment-guide-vm-with-consul
+
+#==> Nomad Common Config
+region = "{{ nomad_region }}"
+datacenter = "{{ nomad_datacenter }}"
+disable_update_check = {{ nomad_disable_update_check | bool | lower }}
+data_dir = "{{ nomad_data_dir }}"
+
+bind_addr = "0.0.0.0" # Default is 0.0.0.0
+{% raw %}
+# advertise {
+#   #--> Defaults to the first private IP address.
+#   http = "{{ GetInterfaceIP `ens4` }}"
+#   rpc  = "{{ GetInterfaceIP `ens4` }}"
+#   serf = "{{ GetInterfaceIP `ens4` }}" #--> non-default ports may be specified
+# }
+advertise {
+  #--> Defaults to the first private IP address.
+  http = "{{ GetInterfaceIP `CHANGENIC` }}"
+  rpc  = "{{ GetInterfaceIP `CHANGENIC` }}"
+  serf = "{{ GetInterfaceIP `CHANGENIC` }}" #--> non-default ports may be specified
+}
+{% endraw %}
+
+log_level = "{{ nomad_log_level }}"
+enable_syslog = {{ nomad_syslog_enable | bool | lower }}
+
+leave_on_terminate = {{ nomad_leave_on_terminate | bool | lower }}
+leave_on_interrupt = {{ nomad_leave_on_interrupt | bool | lower }}
+
+{% if ( nomad_ca_file ) and
+      ( nomad_cert_file ) and
+      ( nomad_key_file )
+%}
+tls {
+    http = true
+    rpc = true
+    ca_file = "{{ nomad_ca_file }}"
+    cert_file = "{{ nomad_cert_file }}"
+    key_file = "{{ nomad_key_file }}"
+    verify_server_hostname = "{{ nomad_verify_server_hostname }}"
+    verify_https_client = "{{ nomad_verify_https_client }}"
+}
+{% endif %}
+
+# https://learn.hashicorp.com/tutorials/nomad/prometheus-metrics
+telemetry {
+  collection_interval        = "1s"
+  disable_hostname           = true
+  publish_allocation_metrics = true
+  publish_node_metrics       = true
+  prometheus_metrics         = true
+}
+
+# Enable Auditing
+audit {
+  enabled = true
+}
+
+# Enable ACL
+#acl {
+#  enabled = true
+#}

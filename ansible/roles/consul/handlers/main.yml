@@ -1,0 +1,20 @@
+- name: Reload systemd
+  become: yes
+  # command: systemctl daemon-reload
+  systemd:
+    daemon_reload: true
+  listen: systemd_reload
+
+- name: restart consul on Linux
+  service:
+    name: consul
+    state: restarted
+  when: ansible_os_family != "Windows"
+  listen: 'consul_restart'
+
+- name: restart consul on windows
+  win_service:
+    name: consul
+    state: restarted
+  when: ansible_os_family == "Windows"
+  listen: 'consul_restart'

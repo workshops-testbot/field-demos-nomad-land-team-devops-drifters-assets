@@ -1,0 +1,10 @@
+- name: Reload systemd
+  become: yes
+  # command: systemctl daemon-reload
+  systemd:
+    daemon_reload: true
+  listen: systemd_reload
+
+- name: Restart service nomad
+  service: name=nomad state=restarted
+  listen: nomad_restart

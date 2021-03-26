@@ -1,0 +1,23 @@
+---
+# File: user_group.yml - User and group settings
+
+- name: Add Nomad group
+  become: yes
+  group:
+    name: "{{ nomad_group }}"
+    state: present
+  when:
+    - nomad_manage_group | bool
+
+- name: Add Nomad user
+  become: yes
+  user:
+    name: "{{ nomad_user }}"
+    system: yes
+    shell: "/sbin/nologin"
+    comment: "Nomad user - nologin"
+    create_home: "no"
+    state: present
+    group: "{{ nomad_group }}"
+  when:
+    - nomad_manage_user | bool

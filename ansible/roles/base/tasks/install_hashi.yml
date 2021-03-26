@@ -1,0 +1,48 @@
+- name: Add HashiCorp GPG Key
+  apt_key:
+    url: https://apt.releases.hashicorp.com/gpg
+    state: present
+  tags: hashi
+
+#--> not useing command to get dist info. using facts and variables instead.
+- name: Add HashiCorp Linux Repository
+  apt_repository:
+    repo: deb https://apt.releases.hashicorp.com {{ansible_lsb.codename}} main
+    state: present
+  tags: hashi
+
+- name: Update apt and install HashiCorp
+  apt: update_cache=yes name={{item}} state=latest
+  loop:
+    - consul-enterprise
+    - nomad-enterprise
+    - vault-enterprise
+  tags: hashi
+
+# - name: Unzip and install hashi consul
+#   unarchive:
+#     remote_src: yes
+#     src: https://releases.hashicorp.com/consul/{{consul_ver}}+ent/consul_{{consul_ver}}+ent_linux_{{arch}}.zip
+#     dest: /usr/bin/
+#   tags:
+#     - base
+
+# - name: Unzip and install hashi nomad
+#   unarchive:
+#     remote_src: yes
+#     src: https://releases.hashicorp.com/nomad/{{nomad_ver}}+ent/nomad_{{nomad_ver}}+ent_linux_{{arch}}.zip
+#     dest: /usr/bin/
+#   tags:
+#     - base
+
+# - name: Unzip and install hashi vault
+#   unarchive:
+#     remote_src: yes
+#     src: https://releases.hashicorp.com/vault/{{vault_ver}}+ent/vault_{{vault_ver}}+ent_linux_{{arch}}.zip
+#     dest: /usr/bin/
+#   tags:
+#     - base
+
+
+
+
