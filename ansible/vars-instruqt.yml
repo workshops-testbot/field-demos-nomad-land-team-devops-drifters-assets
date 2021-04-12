@@ -1,0 +1,22 @@
+#==> Environment Specific
+prefix: pphan-server
+# Leaving os_interface here for notes. Should be specified in inventory vars.
+# os_interface: ens4 #enp0s2, Instruqt ens4, Vagrant enp0s8, Azure: eth0
+user: adminuser #ubuntu
+arch: amd64 # arm64, amd64
+#==> Common
+consul_ver: 1.9.4
+nomad_ver: 1.0.4
+vault_ver: 1.7.0
+waypoint_ver: 0.2.1
+boundary_ver: 0.1.6
+unseal_keys_dir_output: "/tmp/unsealKey"
+root_token_dir_output: "/tmp/rootKey"
+host_file:
+  server-a-1:
+    ip: "192.168.64.23"
+  server-a-2:
+    ip: "192.168.64.24"
+
+### Consul
+consul_dnsmasq_enable: true

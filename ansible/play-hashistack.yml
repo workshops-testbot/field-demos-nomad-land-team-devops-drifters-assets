@@ -3,12 +3,10 @@
   become: yes
   vars:
     # prefix: hashi
-    region_letter: a
   roles:
     - base
     - docker
     - consul
-    # - consul-secure
     - nomad
     - vault
 
