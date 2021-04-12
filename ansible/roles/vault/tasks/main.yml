@@ -1,0 +1,113 @@
+# - name: Creating vault user group
+#   group: name="{{ vault_group }}"
+#   become: true
+
+- name: Creating vault user
+  become: yes
+  user:
+    name="{{ item }}" system=yes shell="/sbin/nologin"
+    comment="nologin user" create_home="no" state=present
+  loop:
+    - "{{ vault_user }}"
+  tags:
+    - vault
+
+- name: Create Hashi directories - data
+  become: yes
+  file:
+    path: /opt/{{ item }}/data
+    state: directory
+    mode: 0777
+    owner: "{{ item }}"
+    group: "{{ item }}"
+  loop:
+    - vault
+  tags:
+    - vault
+
+- name: Create Hashi directories - configuration
+  become: yes
+  file:
+    path: /etc/{{ item }}.d
+    state: directory
+    mode: 0777
+    owner: "{{ item }}"
+    group: "{{ item }}"
+  loop:
+    - vault
+  tags:
+    - vault
+
+# - name: Install prerequisites
+#   package:
+#     name: "{{ item }}"
+#     update_cache: yes
+#   with_items: "{{ vault_install_prerequisites }}"
+#   become: yes
+
+# - name: Download binary
+#   get_url:
+#     url: https://releases.hashicorp.com/vault/{{vault_version}}/vault_{{vault_version}}_linux_amd64.zip
+#     dest: /tmp/vault_{{vault_version}}_linux_amd64.zip
+#     owner: "{{ vault_user }}"
+#     group: "{{ vault_group }}"
+#     mode: 0755
+#     checksum: "{{vault_checksum}}"
+#   register: vault_download
+
+# - name: "Unzip vault archive"
+#   unarchive:
+#     src: "{{ vault_download.dest }}"
+#     dest: /usr/local/bin
+#     copy: no
+#     owner: "{{ vault_user }}"
+#     group: "{{ vault_group }}"
+#     mode: 0755
+
+# - name: Unzip and install hashi vault
+#   become: yes
+#   unarchive:
+#     remote_src: yes
+#     src: https://releases.hashicorp.com/vault/{{vault_ver}}{{vault_ent}}/vault_{{vault_ver}}{{vault_ent}}_linux_{{arch}}.zip
+#     dest: /usr/bin/
+#   tags:
+#     - vault
+#     - home
+
+# - name: "Set vault binary capabilities"
+#   capabilities:
+#     path: /usr/local/bin/vault
+#     capability: cap_ipc_lock+ep
+#     state: present
+
+- name: Vault - Create service file
+  become: yes
+    # Ubuntu: service files are placesd here /lib/systemd/system/
+    # Ubuntu: symlinked to here when enabled /etc/systemd/system/multi-user.target.wants/
+  template:
+    src: init.service.j2
+    dest: /lib/systemd/system/vault.service
+    # dest: /etc/systemd/system/vault.service
+    # owner: root
+    # group: root
+  notify: systemd_reload
+  tags:
+    - vault
+    - home
+
+- name: Vault - Create config file
+  become: yes
+  template:
+    src: "vault-{{vault_backend}}.hcl.j2"
+    dest: "{{ vault_config_path }}/vault.hcl"
+    owner: "{{ vault_user }}"
+    group: "{{ vault_group }}"
+
+- name: Vault - Enable and start vault service
+  become: yes
+  service:
+    name: vault
+    state: started
+    enabled: yes
+  tags:
+    - vault
