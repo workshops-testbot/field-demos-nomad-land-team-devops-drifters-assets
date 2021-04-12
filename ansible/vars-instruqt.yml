@@ -1,5 +1,5 @@
 #==> Environment Specific
-prefix: pphan-server
+# prefix: pphan-server
 # Leaving os_interface here for notes. Should be specified in inventory vars.
 # os_interface: ens4 #enp0s2, Instruqt ens4, Vagrant enp0s8, Azure: eth0
 user: adminuser #ubuntu
