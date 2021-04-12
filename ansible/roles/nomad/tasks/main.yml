@@ -100,6 +100,7 @@
   loop:
     - nomad
     - server
+    - client
   notify: nomad_restart
   tags:
     - nomad
