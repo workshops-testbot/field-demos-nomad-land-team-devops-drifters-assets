@@ -97,8 +97,8 @@
   template:
     src: "{{ item }}.hcl.j2"
     dest: "{{ consul_config_path }}/{{ item }}.hcl"
-    owner: "{{ consul_user }}"
-    group: "{{ consul_group }}"
+    # owner: "{{ consul_user }}"
+    # group: "{{ consul_group }}"
   loop:
     # - client
     - consul
@@ -112,8 +112,8 @@
   template:
     src: "{{ item }}.hcl.j2"
     dest: "{{ consul_config_path }}/{{ item }}.hcl"
-    owner: "{{ consul_user }}"
-    group: "{{ consul_group }}"
+    # owner: "{{ consul_user }}"
+    # group: "{{ consul_group }}"
   loop:
     - server
   # notify: consul_restart # does not work with loops
