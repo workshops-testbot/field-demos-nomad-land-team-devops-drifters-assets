@@ -76,3 +76,15 @@
     - vault
   tags:
     - base
+
+- name: Enable autocompletion - root
+  ignore_errors: yes
+  lineinfile:
+    path: /root/.bashrc
+    line: complete -C /usr/bin/{{item}} {{item}}
+  loop:
+    - consul
+    - nomad
+    - vault
+  tags:
+    - base
