@@ -198,28 +198,27 @@
 #     - nomad-license
 #     - hashicups
 
-- name: Nomad - Git checkout
-  ignore_errors: yes
-  become: yes
-  git:
-    repo: 'https://github.com/phanclan/nomad_jobs.git'
-    dest: /tmp/nomad_jobs
-    # version:
-  run_once: true
-  delegate_to: "{{prefix}}-a-1"
-  tags:
-    - nomad-license
+# Performed in startup script now.
+# - name: Nomad - Git checkout
+#   ignore_errors: yes
+#   become: yes
+#   git:
+#     repo: 'https://github.com/phanclan/nomad_jobs.git'
+#     dest: /tmp/nomad_jobs
+#     # version:
+#   run_once: true
+#   delegate_to: "{{prefix}}-a-1"
+#   tags:
+#     - nomad-license
 
 - name: Nomad - DAS - Start prometheus and auto-scaler
   shell: |
-    cd /tmp/nomad_jobs/hashicups
+    cd /root/nomad_jobs/hashicups
     nomad job run as-das-autoscaler.nomad
     nomad job run as-prometheus.nomad
   run_once: true
   delegate_to: "{{prefix}}-a-1"
   environment:
-    # VAULT_TOKEN: "{{ lookup('file', '/tmp/rootKey/rootkey')}}"
-    # VAULT_ADDR: "http://127.0.0.1:8200"
     NOMAD_ADDR: "http://127.0.0.1:4646"
   tags:
     - nomad-license
