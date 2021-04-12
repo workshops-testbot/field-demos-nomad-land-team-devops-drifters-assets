@@ -14,6 +14,7 @@ server-a-3
 
 [hashi_instruqt_west:vars]
 region_letter=a
+consul_retry_join="{{ groups['hashi_instruqt_west'] | list | to_json }}"
 
 [hashi_instruqt_east]
 server-b-1
@@ -26,6 +27,7 @@ region_letter=b
 [hashi_instruqt:vars]
 cloud_resolver=10.64.0.254
 os_interface=ens4
+user=root
 
 [vaultservers]
 server-a-1
