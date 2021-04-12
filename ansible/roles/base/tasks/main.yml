@@ -8,19 +8,6 @@
   tags:
     - base
 
-- name: Add mappings to /etc/hosts
-  become: yes
-  blockinfile:
-    backup: yes
-    path: /etc/hosts
-    state: present
-    block: |
-      {{ item.value.ip }} {{ item.key }}
-    marker: "# {mark} ANSIBLE MANAGED BLOCK {{ item.key }}"
-  loop: "{{ lookup('dict', host_file) }}"
-  tags:
-    - home
-
 # - name: Forward DNS to Consul for .consul. Update /etc/systemd/resolved.conf
 #   become: yes
 #   blockinfile:
@@ -72,11 +59,11 @@
   tags:
     - base
 
-#==> Install HashiStack Binaries - Specific roles configure further.
-- name: Install HashiCorp Software
-  include: install_hashi.yml
-  tags:
-    - base
+#==> Install HashiStack Binaries - Specific roles configure further. Disabled since image has it
+# - name: Install HashiCorp Software
+#   include: install_hashi.yml
+#   tags:
+#     - base
 
 - name: Enable autocompletion
   ignore_errors: yes

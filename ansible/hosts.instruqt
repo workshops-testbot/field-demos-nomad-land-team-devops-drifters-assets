@@ -1,0 +1,47 @@
+[all:vars]
+
+### Custom ssh key
+#ansible_ssh_private_key_file=~/.ssh/id_rsa
+
+[hashi_instruqt:children]
+hashi_instruqt_west
+hashi_instruqt_east
+
+[hashi_instruqt_west]
+server-a-1
+server-a-2
+server-a-3
+
+[hashi_instruqt_west:vars]
+region_letter=a
+
+[hashi_instruqt_east]
+server-b-1
+#server-b-2
+#server-b-3
+
+[hashi_instruqt_east:vars]
+region_letter=b
+
+[hashi_instruqt:vars]
+cloud_resolver=10.64.0.254
+os_interface=ens4
+
+[vaultservers]
+server-a-1
+
+[nomadservers]
+server-b-1
+# server-b-2
+# server-b-3
+
+[consulservers]
+server-b-1
+# server-b-2
+# server-b-3
+
+[emergingservers]
+server-b-1
+server-b-2
+server-b-3
+# client-b-3

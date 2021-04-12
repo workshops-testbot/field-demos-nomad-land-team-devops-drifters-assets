@@ -1,0 +1,33 @@
+---
+- hosts: hashi_instruqt_west #hashi_west
+  become: yes
+  vars:
+    # prefix: hashi
+    region_letter: a
+  roles:
+    - base
+    - docker
+    - consul
+    # - consul-secure
+    - nomad
+    - vault
+
+#==> Configure Vault
+# - hosts: hashi_west
+#   become: yes
+#   vars:
+#     # prefix: hashi
+#     region_letter: a
+#     # os_interface: enp0s8 #enp0s2, Instruqt ens4, Vagrant enp0s8
+#     vault_backend: raft # file or raft
+#     # vault_ver: 1.6.0
+#     # arch: amd64 # arm64, amd64
+#     # unseal_keys_dir_output: "/tmp/unsealKey"
+#     # root_token_dir_output: "/tmp/rootKey"
+#     # user: ubuntu
+#   roles:
+#     - vault-destroy
+#     - vault
+#     - vault-init
+#     - vault-unseal
+#     - vault-configure
