@@ -1,0 +1,60 @@
+# - name: Create unseal directories
+#   file:
+#     path: "{{ unseal_keys_dir_output }}"
+#     state: directory
+#   delegate_to: localhost
+
+# - name: Create root key directories
+#   file:
+#     path: "{{ root_token_dir_output }}"
+#     state: directory
+#   delegate_to: localhost
+
+- name: Create unseal and root key directories
+  become: no
+  file:
+    path: "{{item}}/{{inventory_hostname}}/"
+    state: directory
+  loop:
+    - "{{ unseal_keys_dir_output }}"
+    - "{{ root_token_dir_output }}"
+  delegate_to: localhost
+  tags:
+    - vault-init
+
+- name: Initialise Vault operator
+  shell: vault operator init -key-shares=5 -key-threshold=3 -format json
+  environment:
+    VAULT_ADDR: "http://127.0.0.1:8200"
+  register: vault_init_results
+  ignore_errors: yes
+  tags:
+    - vault-init
+
+- name: Parse output of vault init
+  set_fact:
+    vault_init_parsed: "{{ vault_init_results.stdout | from_json }}"
+  ignore_errors: yes
+  tags:
+    - vault-init
+
+- name: Write unseal keys to files
+  become: no
+  copy:
+    dest: "{{ unseal_keys_dir_output }}/{{inventory_hostname}}/unseal_key_{{ item.0 }}"
+    content: "{{ item.1 }}"
+  with_indexed_items: "{{ vault_init_parsed.unseal_keys_hex }}"
+  delegate_to: localhost
+  ignore_errors: yes
+  tags:
+    - vault-init
+
+- name: Write root token to file
+  become: no
+  copy:
+    content: "{{ vault_init_parsed.root_token }}"
+    dest: "{{root_token_dir_output}}/{{inventory_hostname}}/rootkey"
+  delegate_to: localhost
+  ignore_errors: yes
+  tags:
+    - vault-init

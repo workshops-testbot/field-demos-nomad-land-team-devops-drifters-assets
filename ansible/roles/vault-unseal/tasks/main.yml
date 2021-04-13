@@ -1,0 +1,144 @@
+- name: Reading unseal key contents
+  command: cat {{item}}
+  register: unseal_keys
+  with_fileglob: "{{ unseal_keys_dir_output }}/{{inventory_hostname}}/*"
+  delegate_to: localhost
+  become: no
+  tags:
+    - vault-unseal
+
+- name: Unseal vault with unseal keys
+  shell: |
+    vault operator unseal {{ item.stdout }}
+    sleep 10
+  environment:
+    VAULT_ADDR: "http://127.0.0.1:8200"
+  with_items: "{{unseal_keys.results}}"
+  tags:
+    - vault-unseal
+
+- name: Read license content
+  become: no
+  command: cat ./files/vault.hclic
+  register: vault_license
+  # with_fileglob: ./licenses/vault.hcl
+  delegate_to: localhost
+  # become: no
+  tags:
+    - vault-license
+    - home
+
+- name: License vault
+  shell: |
+    vault write sys/license text={{ lookup('file', 'vault.hclic')}}
+    # echo {{ lookup('file', 'vault.hclic')}} > deleteme.txt
+  environment:
+    VAULT_TOKEN: "{{ lookup('file', '/tmp/rootKey/{{inventory_hostname}}/rootkey')}}"
+    VAULT_ADDR: "http://127.0.0.1:8200"
+  tags:
+    - vault-license
+    - home
+
+#==> Vault - Transform
+- name: Enable transform on Vault.
+  become: no
+  copy:
+    dest: "/tmp/configure-vault.sh"
+    content: |
+      # Enable the transform secrets engine
+      vault secrets enable transform
+
+      # Create a role containing the transformations that it can perform
+      vault write transform/role/payments transformations=card-number
+
+      # Create an alphabet defining a set of characters to use for format-preserving
+      # encryption (FPE) if not using the built-in alphabets.
+
+      # Create a template defining the rules for value matching if not using the built-in template
+
+      # Create a transformation to specify the nature of the data manipulation
+      vault write transform/transformation/card-number \
+        type=fpe \
+        template="builtin/creditcardnumber" \
+        tweak_source=internal \
+        allowed_roles=payments
+
+      #vault list transform/transformation/
+      #vault read transform/transformation/card-number
+      #vault write transform/encode/payments value=1111-2222-3333-4444 > /tmp/transform-clear.txt
+      #vault write transform/encode/payments -format=json value=1111-2222-3333-4444 > /tmp/transform-clear.txt
+      #vault write transform/decode/payments value=$(jq -r .data.encoded_value /tmp/transform-clear.txt)
+    mode: 0777
+  # notify: dnsmasq_restart
+  tags:
+    - vault
+
+# - name: Register Vault Status
+#   ansible.builtin.shell: systemctl vault status
+#   register: vault_status
+#   environment:
+#     VAULT_TOKEN: "{{ lookup('file', '/tmp/rootKey/rootkey')}}"
+#     VAULT_ADDR: "http://127.0.0.1:8200"
+#   tags:
+#     - vault
+
+# - name: License Key Exists
+#   shell: ls '/tmp/rootKey/rootkey'
+#   register: key_exists
+#   tags:
+#     - vault
+
+- name: Vault - Run vault transform enablement script.
+  become: no
+  shell: /tmp/configure-vault.sh
+  environment:
+    VAULT_TOKEN: "{{ lookup('file', '/tmp/rootKey/{{inventory_hostname}}/rootkey')}}"
+    VAULT_ADDR: "http://127.0.0.1:8200"
+  delegate_to: localhost
+#  when: vault_status.stdout.find('post-unseal setup complete') != -1 and key_exists.stdout != ""
+  # when: key_exists.stdout != ""
+  run_once: true
+  tags:
+    - vault
+
+- name: Find all of the Nomad Job files in this directory
+  find:
+    paths: "/root/nomad_jobs/hashicups/"
+    patterns: "*.nomad"
+  register: nomad_jobs
+  run_once: true
+  tags:
+    - vault
+    - instruqt
+
+- name: Insert Vault token into files
+  replace:
+    path: "{{ item.path }}"
+    regexp: "REPLACETOKEN"
+    replace: "{{ lookup('file', '/tmp/rootKey/{{inventory_hostname}}/rootkey')}}"
+  with_items: "{{ nomad_jobs.files }}"
+  run_once: true
+  tags:
+    - vault
+    - instruqt
+
+# - name: Vault - Configure vault token in application
+#   replace:
+#     path: /root/nomad_jobs/hashicups/hashicups_payment.nomad
+#     regexp: "REPLACETOKEN"
+#     replace: "{{ lookup('file', '/tmp/rootKey/rootkey')}}"
+#   run_once: true
+# #  when: vault_status.stdout.find('post-unseal setup complete') != -1 and key_exists.stdout != ""
+#   tags:
+#     - vault
+#     - instruqt
+
+- name: Vault - Add VAULT_ADDR and VAULT_TOKEN to instruqt. NOT for production.
+  blockinfile:
+    path: /root/.bashrc
+    block: |
+      export VAULT_TOKEN={{ lookup('file', '/tmp/rootKey/{{inventory_hostname}}/rootkey')}}
+      export VAULT_ADDR=http://127.0.0.1:8200
+  tags:
+    - vault
+    - instruqt
