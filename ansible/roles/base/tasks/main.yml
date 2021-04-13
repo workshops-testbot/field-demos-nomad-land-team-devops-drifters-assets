@@ -83,7 +83,7 @@
   ignore_errors: yes
   lineinfile:
     path: /root/.bashrc
-    line: complete -C /usr/bin/{{item}} {{item}}
+    line: complete -C /usr/local/bin/{{item}} {{item}}
   loop:
     - consul
     - nomad

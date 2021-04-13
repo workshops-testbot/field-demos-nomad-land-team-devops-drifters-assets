@@ -9,6 +9,8 @@
     - consul
     - nomad
     - vault
+    - vault-init
+    - vault-unseal
 
 #==> Configure Vault
 # - hosts: hashi_west
