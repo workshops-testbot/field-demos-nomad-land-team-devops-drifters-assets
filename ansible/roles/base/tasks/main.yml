@@ -74,8 +74,6 @@
     - consul
     - nomad
     - vault
-    - vault-init
-    - vault-unseal
   tags:
     - base
 
