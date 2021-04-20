@@ -48,7 +48,7 @@ job "hashicups" {
 
       # Postgres Docker image location and configuration
       config {
-        image = "hashicorpdemoapp/product-api-db:v0.0.12"
+        image = "hashicorpdemoapp/product-api-db:v0.0.14"
         dns_servers = ["172.17.0.1"]
         network_mode = "host"
         port_map {
@@ -148,7 +148,7 @@ EOF
 
       # Product-api Docker image location and configuration
       config {
-        image = "hashicorpdemoapp/product-api:v0.0.12"
+        image = "hashicorpdemoapp/product-api:v0.0.14"
         dns_servers = ["172.17.0.1"]
         port_map {
           http_port = 9090
@@ -290,12 +290,12 @@ EOF
       # Product-api Docker image location and configuration
 
      config {
-        jar_path    = "local/spring-boot-payments-0.0.5.jar"
+        jar_path    = "local/spring-boot-payments-0.0.11.jar"
         jvm_options = ["-Xmx1024m", "-Xms256m"]
       }
 
       artifact {
-         source = "https://github.com/hashicorp-demoapp/payments/releases/download/v0.0.5/spring-boot-payments-0.0.5.jar"
+         source = "https://github.com/hashicorp-demoapp/payments/releases/download/v0.0.11/spring-boot-payments-0.0.11.jar"
       }
 
       # Host machine resources required
@@ -357,7 +357,7 @@ EOF
 
       # Public-api Docker image location and configuration
       config {
-        image = "hashicorpdemoapp/public-api:v0.0.2"
+        image = "hashicorpdemoapp/public-api:v0.0.4"
         dns_servers = ["172.17.0.1"]
 
         port_map {

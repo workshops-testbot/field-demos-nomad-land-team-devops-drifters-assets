@@ -27,7 +27,7 @@ job "example" {
       driver = "docker"
 
       config {
-        image = "nginx"
+        image = "nginx:1.19.10"
         ports = ["lb"]
         volumes = [
           # It's safe to mount this path as a file because it won't re-render.
