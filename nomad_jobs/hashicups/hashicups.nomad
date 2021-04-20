@@ -9,6 +9,12 @@ job "hashicups" {
   group "postgres" {
     count = 1
 
+    network {
+      port "db" {
+        static = 5432
+      }
+    }
+
     # Host volume on which to store Postgres Data.  Nomad will confirm the client offers the same volume for placement.
     volume "pgdata" {
       type      = "host"
@@ -38,9 +44,7 @@ job "hashicups" {
         image = "hashicorpdemoapp/product-api-db:v0.0.14"
         dns_servers = ["172.17.0.1"]
         network_mode = "host"
-        port_map {
-          db = 5432
-        }
+        ports = ["db"]
       }
 
       # Task relevant environment variables necessary
@@ -59,11 +63,6 @@ job "hashicups" {
       resources {
         cpu = 300
         memory = 512
-        network {
-          port  "db"  {
-            static = 5432
-          }
-        }
       }
 
       scaling "cpu" {
@@ -92,6 +91,7 @@ job "hashicups" {
       service {
         name = "postgres"
         port = "db"
+        tags = ["postgres"]
 
         check {
           name     = "alive"
@@ -106,6 +106,13 @@ job "hashicups" {
   # Products API component that interfaces with the Postgres database
   group "products-api" {
     count = 1
+
+    network {
+      port "http_port" {
+        static = 9090
+      }
+    }
+
     restart {
       attempts = 10
       interval = "5m"
@@ -137,21 +144,13 @@ EOF
       config {
         image = "hashicorpdemoapp/product-api:v0.0.14"
         dns_servers = ["172.17.0.1"]
-        port_map {
-          http_port = 9090
-        }
+        ports = ["http_port"]
       }
 
       # Host machine resources required
       resources {
         cpu    = 100
         memory = 300
-        network {
-          #mbits = 10
-          port  "http_port"  {
-            static = 9090
-          }
-        }
       }
 
       scaling "cpu" {
@@ -180,11 +179,7 @@ EOF
       service {
         name = "products-api-server"
         port = "http_port"
-        tags = [
-          "traefik.enable=true",
-          "traefik.http.routers.products.entrypoints=products",
-          "traefik.http.routers.products.rule=Path(`/`)",
-        ]
+        tags = ["products-api"]
         check {
           type     = "http"
           path     = "/health"
@@ -198,6 +193,12 @@ EOF
   # Public API component
   group "public-api" {
     count = 1
+
+    network {
+      port "pub_api" {
+        static = 9080
+      }
+    }
 
     restart {
       attempts = 10
@@ -220,21 +221,13 @@ EOF
         image = "hashicorpdemoapp/public-api:v0.0.4"
         dns_servers = ["172.17.0.1"]
 
-        port_map {
-          pub_api = 9080
-        }
+        ports = ["pub_api"]
       }
 
       # Host machine resources required
       resources {
         cpu    = 100
         memory = 256
-
-        network {
-          port "pub_api" {
-            static = 9080
-          }
-        }
       }
 
       scaling "cpu" {
@@ -263,11 +256,7 @@ EOF
       service {
         name = "public-api-server"
         port = "pub_api"
-        tags = [
-          "traefik.enable=true",
-          "traefik.http.routers.public.entrypoints=public",
-          "traefik.http.routers.public.rule=Path(`/`)",
-        ]
+        tags = ["public-api"]
         check {
           type     = "tcp"
           interval = "10s"
@@ -281,6 +270,12 @@ EOF
 
   group "frontend" {
     count = 3
+
+    network {
+      port "http" {
+        static = 80
+      }
+    }
 
     restart {
       attempts = 10
@@ -305,6 +300,7 @@ EOF
         volumes = [
           "local:/etc/nginx/conf.d",
         ]
+        ports = ["http"]
       }
 
       # Creation of the NGINX configuration file
@@ -344,12 +340,6 @@ EOF
       resources {
         cpu = 100
         memory = 256
-        network {
-          mbits = 10
-          port  "http"{
-            static = 80
-          }
-        }
       }
 
       scaling "cpu" {
@@ -379,13 +369,7 @@ EOF
         name = "frontend"
         port = "http"
 
-        tags = [
-          # "traefik.enable=true",
-          # "traefik.http.routers.frontend.rule=Path(`/frontend`)",
-          "traefik.enable=true",
-          "traefik.http.routers.frontend.entrypoints=frontend",
-          "traefik.http.routers.frontend.rule=Path(`/`)",
-        ]
+        tags = ["frontend"]
 
         check {
           type     = "http"

@@ -18,6 +18,12 @@ job "postgres-sync-service" {
   group "symmetric-process" {
     count = 1
 
+    network {
+      port "symds" {
+        static = 31415
+      }
+    }
+
     restart {
       attempts = 10
       interval = "5m"
@@ -105,13 +111,8 @@ cluster.lock.enabled=false
           ]
       }
       resources {
-        #cpu    = 500
-        #memory = 1024
-        network {
-          port "symds" {
-            static = 31415
-          }
-        }
+        cpu    = 500
+        memory = 1024
       }
     service {
         name = "symds"
