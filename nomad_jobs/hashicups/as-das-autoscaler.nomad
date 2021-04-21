@@ -68,6 +68,7 @@ dynamic_application_sizing {
   // 5 minutes, rather than having to wait for 24hrs as is the default.
   evaluate_after = "5m"
 }
+
 policy_eval {
   // Disable the horizontal application and horizontal cluster workers. This
   // helps reduce log noise during the demo.
