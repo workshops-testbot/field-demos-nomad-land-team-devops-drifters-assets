@@ -470,6 +470,32 @@ spring:
 EOF
       }
 
+      template {
+        destination   = "local/application.yaml"
+        data = <<EOF
+spring:
+  application:
+    name: payments-api
+  datasource:
+    url: jdbc:h2:mem:testdb
+    driverClassName: org.h2.Driver
+    username: sa
+    password: password
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    show-sql: true
+  h2:
+    console:
+      enabled: true
+      settings:
+        web-allow-others: true
+management:
+  endpoint:
+    health:
+      show-details: always
+EOF
+      }
+
       # Creation of the template file defining how to connect to vault
       template {
         destination   = "local/bootstrap.yml"
