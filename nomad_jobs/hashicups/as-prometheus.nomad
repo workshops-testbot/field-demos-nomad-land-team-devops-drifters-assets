@@ -4,11 +4,18 @@ job "prometheus" {
   group "prometheus" {
     count = 1
 
+    network {
+      port "prometheus_ui" {
+        static = 9090
+        to     = 9090
+      }
+    }
+
     task "prometheus" {
       driver = "docker"
 
       config {
-        image = "prom/prometheus:v2.18.1"
+        image = "prom/prometheus:v2.25.0"
 
         args = [
           "--config.file=/etc/prometheus/config/prometheus.yml",
@@ -20,10 +27,7 @@ job "prometheus" {
         volumes = [
           "local/config:/etc/prometheus/config",
         ]
-
-        port_map {
-          prometheus_ui = 9090
-        }
+        ports = ["prometheus_ui"]
       } # end config
 
       template {
@@ -65,12 +69,6 @@ EOH
       resources {
         cpu    = 100
         memory = 256
-        network {
-          mbits = 10
-          port "prometheus_ui" {
-            static = 9090
-          }
-        }
       } # end resources
 
       service {

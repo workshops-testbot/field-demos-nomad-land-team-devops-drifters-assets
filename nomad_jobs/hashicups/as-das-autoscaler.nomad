@@ -2,10 +2,17 @@ job "das-autoscaler" {
   datacenters = ["West"]
   group "autoscaler" {
     count = 1
+
+    network {
+      port "http" {
+        to = 8080
+      }
+    }
+
     task "autoscaler" {
       driver = "docker"
       config {
-        image   = "hashicorp/nomad-autoscaler-enterprise:0.2.0-beta2"
+        image   = "hashicorp/nomad-autoscaler-enterprise:0.3.2"
         command = "bin/nomad-autoscaler"
         args = [
           "agent",
@@ -13,6 +20,8 @@ job "das-autoscaler" {
           "local/autoscaler.hcl",
           "-http-bind-address",
           "0.0.0.0",
+          "-http-bind-port",
+          "${NOMAD_PORT_http}",
           "-nomad-region",
           "West",
         ]
@@ -52,6 +61,14 @@ apm "prometheus" {
   }
 }
 
+// This block contains configuration options specific to the Dynamic Application
+// Sizing enterprise feature.
+dynamic_application_sizing {
+  // Lower the evaluate interval so we can reproduce recommendations after only
+  // 5 minutes, rather than having to wait for 24hrs as is the default.
+  evaluate_after = "5m"
+}
+
 policy_eval {
 
   // Lower the evaluate interval so we can reproduce recommendations after only
@@ -71,11 +88,7 @@ EOH
         memory = 512
       }
     }
-    network {
-      port "http" {
-        to = 8080
-      }
-    }
+
     service {
       name = "nomad-autoscaler"
       port = "http"
@@ -88,4 +101,3 @@ EOH
     }
   }
 }
-
