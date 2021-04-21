@@ -41,7 +41,7 @@ job "hashicups" {
 
      # Postgres Docker image location and configuration
      config {
-        image = "hashicorpdemoapp/product-api-db:v0.0.14"
+        image = "hashicorpdemoapp/product-api-db:v0.0.15"
         dns_servers = ["172.17.0.1"]
         network_mode = "host"
         ports = ["db"]
@@ -142,7 +142,7 @@ EOF
 
       # Product-api Docker image location and configuration
       config {
-        image = "hashicorpdemoapp/product-api:v0.0.14"
+        image = "hashicorpdemoapp/product-api:v0.0.15"
         dns_servers = ["172.17.0.1"]
         ports = ["http_port"]
       }

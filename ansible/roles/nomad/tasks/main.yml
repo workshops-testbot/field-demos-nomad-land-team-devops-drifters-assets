@@ -165,8 +165,8 @@
 - name: HashiCups - Pull images
   become: yes
   shell: |
-    docker pull hashicorpdemoapp/product-api-db:v0.0.14
-    docker pull hashicorpdemoapp/product-api:v0.0.14
+    docker pull hashicorpdemoapp/product-api-db:v0.0.15
+    docker pull hashicorpdemoapp/product-api:v0.0.15
     docker pull hashicorpdemoapp/public-api:v0.0.4
     docker pull hashicorpdemoapp/frontend:v0.0.4
     docker pull hashicorp/tfc-agent:latest

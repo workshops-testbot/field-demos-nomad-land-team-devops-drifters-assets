@@ -47,7 +47,7 @@ job "postgres" {
         }
 
      config {
-        image = "hashicorpdemoapp/product-api-db:v0.0.14"
+        image = "hashicorpdemoapp/product-api-db:v0.0.15"
         dns_servers = ["172.17.0.1"]
         network_mode = "host"
         port_map {
