@@ -445,7 +445,7 @@ spring:
     vault:
       enabled: true
       fail-fast: true
-      authentication: token
+      authentication: TOKEN
       token: REPLACETOKEN
       host: server-a-1
       port: 8200
@@ -462,12 +462,12 @@ EOF
       # Product-api Docker image location and configuration
 
      config {
-        jar_path    = "local/spring-boot-payments-0.0.11.jar"
+        jar_path    = "local/spring-boot-payments-0.0.5.jar"
         jvm_options = ["-Xmx1024m", "-Xms256m"]
       }
 
       artifact {
-         source = "https://github.com/hashicorp-demoapp/payments/releases/download/v0.0.11/spring-boot-payments-0.0.11.jar"
+         source = "https://github.com/hashicorp-demoapp/payments/releases/download/v0.0.5/spring-boot-payments-0.0.5.jar"
       }
 
       # Host machine resources required
