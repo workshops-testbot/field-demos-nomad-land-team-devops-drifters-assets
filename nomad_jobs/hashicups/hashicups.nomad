@@ -104,7 +104,7 @@ job "hashicups" {
   } # end postgres group
 
   # Products API component that interfaces with the Postgres database
-  group "products-api" {
+  group "product-api" {
     count = 1
 
     network {
@@ -120,7 +120,7 @@ job "hashicups" {
       mode     = "delay"
     }
 
-    task "products-api" {
+    task "product-api" {
       driver = "docker"
 
       # Creation of the template file defining how the API will access the database
@@ -177,9 +177,9 @@ EOF
 
       # Service definition to be sent to Consul with corresponding health check
       service {
-        name = "products-api-server"
+        name = "product-api-server"
         port = "http_port"
-        tags = ["products-api"]
+        tags = ["product-api"]
         check {
           type     = "http"
           path     = "/health"
@@ -187,8 +187,8 @@ EOF
           timeout  = "2s"
         }
       }
-    } # end products-api task
-  } # end products-api group
+    } # end product-api task
+  } # end product-api group
 
   # Public API component
   group "public-api" {
@@ -213,7 +213,7 @@ EOF
       # Task relevant environment variables necessary
       env {
         BIND_ADDRESS = ":9080"
-        PRODUCT_API_URI = "http://products-api-server.service.consul:9090"
+        PRODUCT_API_URI = "http://product-api-server.service.consul:9090"
       }
 
       # Public-api Docker image location and configuration
@@ -267,7 +267,6 @@ EOF
   }
 
   # Frontend component providing user access to the application
-
   group "frontend" {
     count = 3
 
