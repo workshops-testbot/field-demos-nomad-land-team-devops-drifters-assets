@@ -483,6 +483,12 @@ management:
 EOF
       }
 
+      # Task relevant environment variables necessary
+      env {
+        SPRING_CONFIG_LOCATION = "file:/local/"
+        SPRING_CLOUD_BOOTSTRAP_LOCATION = "file:/local/"
+      }
+
       # Product-api Docker image location and configuration
       config {
         jar_path    = "local/spring-boot-payments-0.0.11.jar"
