@@ -496,25 +496,10 @@ management:
 EOF
       }
 
-      # Creation of the template file defining how to connect to vault
-      template {
-        destination   = "local/bootstrap.yml"
-        data = <<EOF
-spring:
-  cloud:
-    vault:
-      enabled: true
-      fail-fast: true
-      authentication: TOKEN
-      token: REPLACETOKEN
-      host: server-a-1
-      port: 8200
-      scheme: http
-      kv:
-        enabled: false
-      generic:
-        enabled: false
-EOF
+      # Task relevant environment variables necessary
+      env {
+        SPRING_CONFIG_LOCATION = "file:/local/"
+        SPRING_CLOUD_BOOTSTRAP_LOCATION = "file:/local/"
       }
 
       # Product-api Docker image location and configuration
