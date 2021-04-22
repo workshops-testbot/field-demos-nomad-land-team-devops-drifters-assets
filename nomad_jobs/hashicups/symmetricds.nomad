@@ -16,11 +16,14 @@ job "postgres-sync-service" {
   type = "service"
 
   group "symmetric-process" {
-    count = 1
+    count = 0
 
     network {
       port "symds" {
         static = 31415
+      }
+      dns {
+        servers = ["172.17.0.1"]
       }
     }
 
@@ -30,17 +33,23 @@ job "postgres-sync-service" {
       delay    = "25s"
       mode     = "delay"
     }
-    task "setup-db"{
-        #Should only be done after sync is initally setup, so will error on first run
-        driver = "raw_exec"
+    
+    task "setup-db" {
+      #Should only be done after sync is initally setup, so will error on first run
+
+      driver = "raw_exec"
+
       lifecycle {
-        hook    = "prestart"
+        hook = "prestart"
+        sidecar = false
       }
-        env {
-            PGPASSWORD ="password"
-        }
-        template {
-            data = <<EOH
+
+      env {
+        PGPASSWORD ="password"
+      }
+
+      template {
+        data = <<EOH
 INSERT INTO sym_node_group_link (source_node_group_id,target_node_group_id,data_event_action) VALUES ('primary','primary','P');
 INSERT INTO sym_router (router_id,source_node_group_id,target_node_group_id,router_type,router_expression,sync_on_update,sync_on_insert,sync_on_delete,use_source_catalog_schema,create_time,last_update_by,last_update_time) VALUES ('primary_2_primary', 'primary', 'primary', 'default', NULL, 1, 1, 1, 0, CURRENT_TIMESTAMP, 'console', CURRENT_TIMESTAMP);
 INSERT INTO sym_parameter (external_id, node_group_id, param_key, param_value, create_time, last_update_by, last_update_time) VALUES ('ALL', 'ALL', 'push.thread.per.server.count', '10', CURRENT_TIMESTAMP, 'console', CURRENT_TIMESTAMP);
@@ -72,22 +81,26 @@ INSERT INTO sym_trigger_router (trigger_id, router_id, enabled, initial_load_ord
 VALUES ('public.ingredients', 'primary_2_primary', 1, 10, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 INSERT INTO sym_trigger_router (trigger_id, router_id, enabled, initial_load_order, create_time, last_update_time)
 VALUES ('public.ingredients_id_seq', 'primary_2_primary', 1, 10, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
-        EOH
+EOH
         destination = "local/setupdb.sql"
-        }
-        config {
-          command = "psql"
-          args = [
+      }
+
+      config {
+        command = "psql"
+        args = [
           "-U","root","-h","postgres.service.west.consul","products","-f","local/setupdb.sql"
-          ]
+        ]
       }
     }
+
     task "symmetric-test" {
       driver = "raw_exec"
       artifact {
-        source      = "https://netactuate.dl.sourceforge.net/project/symmetricds/symmetricds/symmetricds-3.12/symmetric-server-3.12.3.zip"
+        source = "https://netactuate.dl.sourceforge.net/project/symmetricds/symmetricds/symmetricds-3.12/symmetric-server-3.12.8.zip"
+        destination = "local/"
       }
-        template {
+
+      template {
         data = <<EOH
 sync.url=http\://symds.service.{{ env "node.datacenter" }}.consul\:31415/sync/products-{{ env "node.datacenter" }}
 group.id=primary
@@ -101,20 +114,23 @@ engine.name=products-{{ env "node.datacenter" }}
 external.id=products-{{ env "node.datacenter" }}
 db.validation.query=select 1
 cluster.lock.enabled=false
-        EOH
-        destination = "local/symmetric-server-3.12.3/engines/${node.datacenter}.properties"
-        }
-      config {
-          command = "local/symmetric-server-3.12.3/bin/sym"
-          args = [
-          ""
-          ]
+EOH
+        destination = "local/symmetric-server-3.12.8/engines/${node.datacenter}.properties"
       }
+
+      config {
+        command = "local/symmetric-server-3.12.8/bin/sym"
+        args = [
+          ""
+        ]
+      }
+
       resources {
         cpu    = 500
         memory = 1024
       }
-    service {
+
+      service {
         name = "symds"
         port = "symds"
         check {
@@ -123,6 +139,6 @@ cluster.lock.enabled=false
           timeout  = "2s"
         }
       }
-    }
-  }
-}
+    } // end task
+  } // end group
+} // end job
