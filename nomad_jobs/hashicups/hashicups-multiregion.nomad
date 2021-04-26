@@ -437,6 +437,10 @@ EOF
 
     task "payments-api" {
       driver = "java"
+      
+      vault {
+        policies = [ "transform" ]
+      }
 
       # Creation of the template file defining how the API will access the database
       template {
@@ -459,7 +463,7 @@ spring:
       enabled: true
       fail-fast: true
       authentication: TOKEN
-      token: REPLACETOKEN
+      token: {{ env "VAULT_TOKEN" }}
       host: server-a-1
       port: 8200
       scheme: http
