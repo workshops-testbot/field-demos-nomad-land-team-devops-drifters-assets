@@ -96,7 +96,7 @@ EOH
     task "symmetric-test" {
       driver = "raw_exec"
       artifact {
-        source = "https://netactuate.dl.sourceforge.net/project/symmetricds/symmetricds/symmetricds-3.12/symmetric-server-3.12.8.zip"
+        source = "https://sourceforge.net/projects/symmetricds/files/symmetricds/symmetricds-3.12/symmetric-server-3.12.8.zip/download?filename=symmetric-server-3.12.8.zip&archive=zip"
         destination = "local/"
       }
 
